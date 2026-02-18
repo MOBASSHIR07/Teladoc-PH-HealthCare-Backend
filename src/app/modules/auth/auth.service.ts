@@ -122,8 +122,12 @@ const loginUser = async(payload:{email:string, password:string}) => {
 
 }
 
+const getMe  = async(user:any)=>{
+  console.log(user);
+}
 
 export const  AuthService = {
     registerpatient,
-    loginUser
+    loginUser,
+    getMe
 }
