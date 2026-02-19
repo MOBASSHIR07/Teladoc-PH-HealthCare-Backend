@@ -9,6 +9,8 @@ import { TokenUtils } from "../../utils/token";
 import { JwtUtils } from "../../utils/jwt";
 import { envVars } from "../../../config/env";
 import { JwtPayload } from "jsonwebtoken";
+import { IChangePasswordPayload } from "./auth.interface";
+
 
 
 interface RegisterPatientPayload {
@@ -213,9 +215,70 @@ const getNewToken = async (refreshToken: string, sessionToken: string) => {
     return { accessToken: newaccessToken, refreshToken: newrefreshToken , sessionToken: token }
 }
 
+
+const changePassword = async (payload: IChangePasswordPayload, sessionToken: string) => {
+    const session = await auth.api.getSession({
+        headers: new Headers({
+            Authorization: `Bearer ${sessionToken}`
+        })
+    })
+    if(!session){
+        throw new AppError(status.UNAUTHORIZED, "Invalid Session Token");
+
+    }
+    const {currentPassword, newPassword} = payload;
+    // we can use prisma to update password 
+    const result = await auth.api.changePassword({
+        body:{
+           currentPassword,
+            newPassword,
+            revokeOtherSessions:true
+        },
+        headers: new Headers({
+            Authorization: `Bearer ${sessionToken}`
+        })
+    })
+    
+    const accessToken = TokenUtils.getAccessToken({
+        userId: session.user.id,
+        email: session.user.email,
+        role: session.user.role,
+        status: session.user.status,
+        isDeleted: session.user.isDeleted,
+        emailVerified: session.user.emailVerified,
+
+    });
+    const refreshToken = TokenUtils.getRefreshToken({
+        userId: session.user.id,
+        email: session.user.email,
+        role: session.user.role,
+        status: session.user.status,
+        isDeleted: session.user.isDeleted,
+        emailVerified: session.user.emailVerified,
+    });
+    return {
+        ...result,
+        accessToken,    
+            refreshToken
+    }
+}
+
+
+const logOutUser = async (sessionToken: string) => {
+    const result = await auth.api.signOut({
+        headers: new Headers({
+            Authorization: `Bearer ${sessionToken}`
+        })
+    })
+   return result
+}
+
+
 export const AuthService = {
     registerpatient,
     loginUser,
     getMe,
-    getNewToken
+    getNewToken,
+    changePassword,
+    logOutUser
 }
