@@ -75,7 +75,7 @@ export const checkAuth = (...authRoles: Role[]) => {
                 throw new AppError(status.FORBIDDEN, "Forbidden: You do not have permission for this action");
             }
             req.user ={
-                userId : authenticatedUser.userId,
+                userId : authenticatedUser.id,
                 role : authenticatedUser.role,
                 email :authenticatedUser.email
             }

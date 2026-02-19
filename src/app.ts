@@ -3,9 +3,16 @@ import { IndexRoute } from "./app/routes";
 import globalErrorHandler from "./app/middlewares/globalErrorHandler";
 import { notFound } from "./app/middlewares/notFound";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 
-const app:Application = express()
+const app: Application = express()
+app.use(cors(
+  {
+    origin: ["http://localhost:3000", "http://localhost:5173"],
+    credentials: true
+  }
 
+))
 // Enable URL-encoded form data parsing
 app.use(express.urlencoded({ extended: true }));
 

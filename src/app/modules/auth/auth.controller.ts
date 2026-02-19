@@ -5,6 +5,7 @@ import { AuthService } from "./auth.service";
 import { sendResponse } from "../../shared/response";
 import status from "http-status";
 import { TokenUtils } from "../../utils/token";
+import AppError from "../../ErrorHelpers/AppError";
 
 const registerPatient = catchAsync(async (req:Request, res:Response) => {
     // Registration logic here
@@ -63,9 +64,36 @@ const getMe = catchAsync(async(req:Request, res:Response)=>{
        })
 })
 
+const getNewToken = catchAsync(async (req:Request, res:Response)=>{
+       const jwtrefreshToken = req.cookies.refreshToken;
+       const betterAuthsessionToken = req.cookies["better-auth.session_token"];
+       if(!jwtrefreshToken || !betterAuthsessionToken){
+        throw new AppError(status.UNAUTHORIZED, "Invalid Tokens");
+       }
+
+       const result = await AuthService.getNewToken(jwtrefreshToken,betterAuthsessionToken)
+      
+       const { accessToken, refreshToken, sessionToken } = result;
+       TokenUtils.setAscessTokenCookie(res, accessToken);
+       TokenUtils.setRefreshTokenCookie(res, refreshToken);
+       TokenUtils.setBetterAuthSessionTokenCookie(res, sessionToken);
+
+       sendResponse(res, {
+        httpStatusCode:status.OK,
+        success:true,
+        message : "Tokens refreshed Successfully",
+        data: {
+            accessToken,
+            refreshToken,
+            sessionToken
+        }
+       })
+})
+
 
 export const AuthController = {
     registerPatient,
     loginUser,
-    getMe
+    getMe,
+    getNewToken
 }
