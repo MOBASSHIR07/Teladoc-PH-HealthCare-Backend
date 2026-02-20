@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .container { font-family: sans-serif; padding: 20px; border: 1px solid #ddd; }
+        .otp { font-size: 24px; font-weight: bold; color: #2c3e50; letter-spacing: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Hello <%= name %>,</h2> <p>Please use the following code to verify your email address:</p>
+        <p class="otp"><%= otp %></p> <p>This code is valid for <strong>2 minutes</strong>.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+    </div>
+</body>
+</html>

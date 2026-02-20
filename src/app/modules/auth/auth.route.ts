@@ -14,5 +14,6 @@ router.get('/me',checkAuth(Role.ADMIN, Role.DOCTOR,Role.PATIENT
     ,Role.SUPER_ADMIN
  ) ,AuthController.changePassword)
  router.post('/logout',checkAuth(Role.ADMIN,Role.DOCTOR, Role.PATIENT, Role.SUPER_ADMIN) ,AuthController.logOutUser)
+ router.post('/verify-email',AuthController.verifyEmail)
 
 export const AuthRoutes = router;
