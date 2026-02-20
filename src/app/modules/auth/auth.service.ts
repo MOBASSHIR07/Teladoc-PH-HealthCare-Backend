@@ -13,6 +13,7 @@ import { IChangePasswordPayload } from "./auth.interface";
 
 
 
+
 interface RegisterPatientPayload {
     name: string;
     email: string;
@@ -239,6 +240,17 @@ const changePassword = async (payload: IChangePasswordPayload, sessionToken: str
         })
     })
     
+    if(session.user.needPasswordChange){
+        await prisma.user.update({
+            where:{
+                id: session.user.id
+            },
+            data:{
+                needPasswordChange: false
+            }
+        })
+    }
+
     const accessToken = TokenUtils.getAccessToken({
         userId: session.user.id,
         email: session.user.email,
@@ -295,6 +307,82 @@ const verifyEmail = async (email: string, otp: string) => {
 }
 
 
+// forget password just send email to the user of this email
+const forgetPassword = async(email: string) => {
+    const isUserExist = await prisma.user.findUnique({
+        where:{
+            email
+        }
+    })
+    if(!isUserExist){
+        throw new AppError(status.BAD_REQUEST, "User not found");
+    }
+    if(!isUserExist.emailVerified){
+        throw new AppError(status.BAD_REQUEST, "Email not verified");
+    }
+    if(isUserExist.status === UserStatus.BLOCKED){
+        throw new AppError(status.FORBIDDEN, "User account is Blocked");
+    }
+    if(isUserExist.isDeleted || isUserExist.status === UserStatus.DELETED){
+        throw new AppError(status.BAD_REQUEST, "User account is deleted");
+    }
+
+    await auth.api.requestPasswordResetEmailOTP({
+        body:{
+            email,
+            
+        }
+    })
+}
+/// forgot password end here
+
+// reset password where  check otp and reset password
+
+const resetPassword = async(email: string, otp: string, newPassword: string) => {
+     const isUserExist = await prisma.user.findUnique({
+        where:{
+            email
+        }
+    })
+    if(!isUserExist){
+        throw new AppError(status.BAD_REQUEST, "User not found");
+    }
+    if(!isUserExist.emailVerified){
+        throw new AppError(status.BAD_REQUEST, "Email not verified");
+    }
+    if(isUserExist.status === UserStatus.BLOCKED){
+        throw new AppError(status.FORBIDDEN, "User account is Blocked");
+    }
+    if(isUserExist.isDeleted || isUserExist.status === UserStatus.DELETED){
+        throw new AppError(status.BAD_REQUEST, "User account is deleted");
+    }
+
+    await auth.api.resetPasswordEmailOTP({
+        body:{
+            email,
+            otp,
+            password: newPassword
+            
+        }
+    })
+     if(isUserExist.needPasswordChange){
+        await prisma.user.update({
+            where:{
+                id: isUserExist.id
+            },
+            data:{
+                needPasswordChange: false
+            }
+        })
+    }
+
+    await prisma.session.deleteMany({
+        where:{
+            userId: isUserExist.id
+        }
+    })
+}
+
 export const AuthService = {
     registerpatient,
     loginUser,
@@ -302,5 +390,7 @@ export const AuthService = {
     getNewToken,
     changePassword,
     logOutUser,
-    verifyEmail
+    verifyEmail,
+    forgetPassword,
+    resetPassword
 }
