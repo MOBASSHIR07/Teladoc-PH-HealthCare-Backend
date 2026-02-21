@@ -7,6 +7,8 @@ import status from "http-status";
 import { TokenUtils } from "../../utils/token";
 import AppError from "../../ErrorHelpers/AppError";
 import { CookieUtils } from "../../utils/cookie";
+import { envVars } from "../../../config/env";
+import { auth } from "../../lib/auth";
 
 const registerPatient = catchAsync(async (req:Request, res:Response) => {
     // Registration logic here
@@ -172,6 +174,61 @@ const resetPassword = catchAsync(async (req:Request, res:Response)=>{
 })
 
 
+const googleLogin = catchAsync(async (req:Request, res:Response)=>{
+
+    const redirectPath = req.query.redirect || "/dashboard";
+    const encodedRedirectPath = encodeURIComponent(redirectPath as string);
+    const callbackURL = `${envVars.BETTER_AUTH_URL}/api/v1/auth/google/success?redirect=${encodedRedirectPath}`;
+
+    res.render("googleRedirect", {
+        callbackUrl: callbackURL,
+        betterAuthUrl: envVars.BETTER_AUTH_URL,
+    })
+})
+
+
+
+const googleLogInSuccess = catchAsync(async (req:Request, res:Response)=>{
+ const redirectPath = req.query.redirect as string || "/dashboard";
+
+ const sessionToken = req.cookies["better-auth.session_token"];
+ if(!sessionToken){
+    return res.redirect(`${envVars.FRONTEND_URL}/login?error=oauth_failed`);
+ }
+
+ const session = await auth.api.getSession({
+    headers:{
+        "Cookie": `better-auth.session_token=${sessionToken}`
+    
+    }
+ });
+
+ if(session && !session.user){
+    return res.redirect(`${envVars.FRONTEND_URL}/login?error=no_user_found`);
+ }
+
+ const result = await AuthService.googleLoginSucess(session!);
+ const { accessToken, refreshToken } = result;
+ TokenUtils.setAscessTokenCookie(res, accessToken);
+ TokenUtils.setRefreshTokenCookie(res, refreshToken);
+
+ const isValidReditectPath = redirectPath.startsWith("/") && !redirectPath.startsWith("//");
+ const finalRedirectPath = isValidReditectPath ? redirectPath : `/dashboard`;
+ res.redirect(`${envVars.FRONTEND_URL}${finalRedirectPath}`);
+
+
+})
+
+
+
+const googleLogInError = catchAsync(async (req:Request, res:Response)=>{
+
+const error = req.query.error as string;
+res.redirect(`${envVars.FRONTEND_URL}/login?error=${error}`);
+
+})
+
+
 export const AuthController = {
     registerPatient,
     loginUser,
@@ -179,5 +236,6 @@ export const AuthController = {
     getNewToken,
      changePassword,
      logOutUser
-     ,verifyEmail , forgetPassword , resetPassword
+     ,verifyEmail , forgetPassword , resetPassword, 
+     googleLogin, googleLogInSuccess, googleLogInError
 }

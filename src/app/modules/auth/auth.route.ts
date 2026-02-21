@@ -18,4 +18,9 @@ router.get('/me',checkAuth(Role.ADMIN, Role.DOCTOR,Role.PATIENT
  router.post('/forget-password',AuthController.forgetPassword)
  router.post('/reset-password',AuthController.resetPassword)
 
+ // gooogle login
+ router.get('/login/google',AuthController.googleLogin)
+ router.get('/google/success',AuthController.googleLogInSuccess)
+ router.get('/google/error',AuthController.googleLogInError)
+
 export const AuthRoutes = router;

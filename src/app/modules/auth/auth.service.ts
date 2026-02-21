@@ -383,6 +383,39 @@ const resetPassword = async(email: string, otp: string, newPassword: string) => 
     })
 }
 
+
+
+const googleLoginSucess = async(session: Record<string, any>) => {
+  const isPatentExist = await prisma.patient.findUnique({
+    where:{
+      userId: session.user.id
+    }
+  })
+  if(!isPatentExist){
+    await prisma.patient.create({
+      data:{
+        userId: session.user.id,
+        name: session.user.name,
+        email: session.user.email
+      }
+    })
+  }
+
+  const accessToken = TokenUtils.getAccessToken({
+    userId: session.user.id,
+    email: session.user.email,
+    role: session.user.role,
+
+});
+
+const refreshToken = TokenUtils.getRefreshToken({
+  userId: session.user.id,
+  email: session.user.email,
+  role: session.user.role,
+});
+return { accessToken, refreshToken }
+}
+
 export const AuthService = {
     registerpatient,
     loginUser,
@@ -392,5 +425,6 @@ export const AuthService = {
     logOutUser,
     verifyEmail,
     forgetPassword,
-    resetPassword
+    resetPassword,
+    googleLoginSucess
 }

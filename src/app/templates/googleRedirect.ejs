@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google LogIn</title>
+</head>
+<body>
+    <div>
+        <p>Redirecting to Google...</p>
+    </div>
+</body>
+
+<script>
+    (async () => {
+        try {
+            const response = await fetch("<%= betterAuthUrl %>/api/auth/sign-in/social", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    provider: "google",
+                    callbackURL: "<%= callbackUrl %>",
+                })
+            });
+
+            // console.log("Status:", response.status);
+            // console.log("Status Text:", response.statusText);
+            // console.log("Headers:", [...response.headers.entries()]);
+
+            const text = await response.text();
+            // console.log("Raw body:", text);
+
+            if (!text) {
+                document.body.innerHTML = `<div><p>Empty response. Status: ${response.status}. Check console.</p></div>`;
+                return;
+            }
+
+            const data = JSON.parse(text);
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                document.body.innerHTML = `<div><p>No URL in response: ${text}</p></div>`;
+            }
+        } catch (error) {
+            document.body.innerHTML = `<div><p>Error: ${error.message}</p></div>`;
+            console.error(error);
+        }
+    })()
+</script>
+</html>
