@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; }
+        .header { background-color: #2c3e50; color: #ffffff; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .credentials { background-color: #ffffff; border-left: 5px solid #3498db; padding: 15px; margin: 20px 0; }
+        .footer { text-align: center; font-size: 12px; color: #777; margin-top: 20px; }
+        .btn { display: inline-block; padding: 10px 20px; background-color: #3498db; color: #ffffff; text-decoration: none; border-radius: 5px; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Welcome to PH HealthCare</h1>
+        </div>
+        <div class="content">
+            <h2>Hello, Dr. <%= name %>!</h2>
+            <p>Your professional account has been created by the administrator. You can now log in to our platform using the credentials below:</p>
+            
+            <div class="credentials">
+                <p><strong>Email:</strong> <%= email %></p>
+                <p><strong>Temporary Password:</strong> <%= password %></p>
+            </div>
+
+            <p style="color: #e74c3c;"><strong>Note:</strong> For security reasons, you will be required to change this password upon your first login.</p>
+            
+            <a href="http://localhost:3000/login" class="btn">Login to Your Dashboard</a>
+        </div>
+        <div class="footer">
+            <p>&copy; 2026 PH HealthCare System. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

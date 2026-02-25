@@ -28,6 +28,7 @@ export const checkAuth = (...authRoles: Role[]) => {
                 if (sessionExist && sessionExist.user) {
                     authenticatedUser = sessionExist.user;
 
+
                     // Proactive Refresh Logic: Check if session lifetime is < 20% left
                     const now = new Date();
                     const sessionExpiry = new Date(sessionExist.expiresAt);
@@ -73,9 +74,14 @@ export const checkAuth = (...authRoles: Role[]) => {
             if (authRoles.length > 0 && !authRoles.includes(authenticatedUser.role)) {
                 throw new AppError(status.FORBIDDEN, "Forbidden: You do not have permission for this action");
             }
+            req.user ={
+                userId : authenticatedUser.id,
+                role : authenticatedUser.role,
+                email :authenticatedUser.email
+            }
 
             // Attach user to request object for use in controllers
-            req.user = authenticatedUser;
+           
 
             next();
         } catch (err: any) {

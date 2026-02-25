@@ -5,6 +5,7 @@ import { auth } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
 import { ICreateDoctorPayload } from "./user.interface";
 import AppError from "../../ErrorHelpers/AppError";
+import { sendEmail } from "../../utils/email";
 
 const createDoctor = async (payload:ICreateDoctorPayload) => {
     const existingSpecialties = await prisma.specialty.findMany({
@@ -36,7 +37,7 @@ const createDoctor = async (payload:ICreateDoctorPayload) => {
     });
 
     try {
-        return await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx) => {
             const doctorData = await tx.doctor.create({
                 data: {
                     ...payload.doctor,
@@ -98,6 +99,22 @@ const createDoctor = async (payload:ICreateDoctorPayload) => {
                 },
             });
         });
+
+        // risky code
+        if (result) {
+            await sendEmail({
+                to: payload.doctor.email,
+                subject: "Your Account Credentials - PH HealthCare",
+                template: "DoctorWelcome", 
+                data: {
+                    name: payload.doctor.name,
+                    email: payload.doctor.email,
+                    password: payload.password 
+                }
+            });
+        }
+
+        return result;
     } catch (error) {
         await prisma.user.delete({ where: { id: userData.user.id } });
         throw error;
