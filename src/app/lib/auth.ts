@@ -88,7 +88,16 @@ export const auth = betterAuth({
                         email
                     }
                 })
-                if(user && !user.emailVerified){
+                  if(!user){
+                    console.log();
+                    return;
+                  }
+                  if(user && user.role === Role.SUPER_ADMIN){
+                    console.log("Super admin email will not send");
+                    return
+                  }
+
+                if(user && !user.emailVerified) {
                     sendEmail({
                         to: email,
                         subject: "Verify your email",
