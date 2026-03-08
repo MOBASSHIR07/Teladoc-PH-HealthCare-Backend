@@ -22,7 +22,7 @@ const  handleWebHookEvent = catchAsync(async (req:Request, res:Response) => {
     }
     try {
         
-        const result = await PaymentService.handleStripeWebHookEvent(event);
+        const result = await PaymentService.handlerStripeWebhookEvent(event);
         sendResponse(res,{
             httpStatusCode: 200,
             success: true,
