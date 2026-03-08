@@ -5,26 +5,55 @@ import { envVars } from "../../config/env";
 import AppError from "../ErrorHelpers/AppError";
 import { deleteFileFromCloudinary } from "../../config/cloudinary.config";
 
-const globalErrorHandler =  async (
+const globalErrorHandler = async (
   err: any,
   req: Request,
   res: Response,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   next: NextFunction
 ) => {
-
-  if(req.file){
-    await deleteFileFromCloudinary(req.file.path);
+  // Check if headers are already sent to prevent double response error
+  if (res.headersSent) {
+    return next(err);
   }
-   if(req.files && Array.isArray(req.files) && req.files.length > 0){
-      const imageUrls = req.files.map((file) => file.path);
-      await Promise.all(imageUrls.map((url) => deleteFileFromCloudinary(url)));
-   }
+
+  // File cleanup logic for Cloudinary
+  if (req.files) {
+    const filesToCleanup: string[] = [];
+
+    // Handle multer.fields() where req.files is an Object (e.g., profilePhoto, medicalReports)
+    if (!Array.isArray(req.files)) {
+      Object.values(req.files).forEach((fileArray) => {
+        fileArray.forEach((file: any) => {
+          if (file.path) {
+            filesToCleanup.push(file.path);
+          }
+        });
+      });
+    } 
+    // Handle multer.array() where req.files is an Array
+   /* FUTURE NOTE: Use the logic below if you ever use 'multer.array()' in a route.
+      'multer.array()' returns req.files as a simple Array instead of an Object.
+      
+      else {
+        req.files.forEach((file: any) => {
+          if (file.path) {
+            filesToCleanup.push(file.path);
+          }
+        });
+      }
+    */
+    // Delete all orphaned files from Cloudinary if any error occurred
+    if (filesToCleanup.length > 0) {
+      await Promise.all(filesToCleanup.map((url) => deleteFileFromCloudinary(url)));
+    }
+  }
 
   let statusCode = err.statusCode || httpStatus.INTERNAL_SERVER_ERROR;
   let message = err.message || "Something went wrong!";
   let errorSources: any = err;
 
+  // Zod validation error handling
   if (err instanceof ZodError) {
     statusCode = httpStatus.BAD_REQUEST;
     message = "Validation Error";
@@ -33,16 +62,16 @@ const globalErrorHandler =  async (
       message: issue.message,
     }));
   } 
-
-  else if (err instanceof AppError){
+  // Custom AppError handling
+  else if (err instanceof AppError) {
     statusCode = err.statusCode;
     message = err.message;
     errorSources = {
-        message: err.message,
-        stack: envVars.NODE_ENV === "development" ? err.stack : null,
-    }
+      message: err.message,
+      stack: envVars.NODE_ENV === "development" ? err.stack : null,
+    };
   }
-  
+  // Prisma database error handling
   else if (err?.name === "PrismaClientKnownRequestError") {
     statusCode = httpStatus.BAD_REQUEST;
     message = "Database Error";
@@ -51,6 +80,7 @@ const globalErrorHandler =  async (
       meta: err.meta,
     };
   } 
+  // Generic error handling
   else if (err instanceof Error) {
     message = err.message;
     errorSources = {
@@ -59,6 +89,7 @@ const globalErrorHandler =  async (
     };
   }
 
+  // Production formatting
   if (envVars.NODE_ENV === "production") {
     if (statusCode === 500) {
       message = "Internal Server Error!";
